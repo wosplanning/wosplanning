@@ -266,6 +266,14 @@
       </table>
     </div>
 
+    <!-- Footer with GitHub link -->
+    <div class="mt-8 pt-4 border-t border-gray-700 text-center text-gray-400">
+      <p class="text-sm">
+        Source code available on
+        <a href="https://github.com/wosplanning/wosplanning" target="_blank" class="text-accent hover:text-white underline">GitHub</a>
+      </p>
+    </div>
+
     <!-- Filter Modal -->
     <div v-if="showFilterModal" class="modal-overlay">
       <div class="modal-content" @click.stop>
@@ -661,13 +669,13 @@ const app = Vue.createApp({
       const data = this.filteredReservations;
 
       // Create CSV header row to include User ID
-      let csvContent = "User ID,Username,Time,Alliance,Date,Minister,Minister Type\n";
+      let csvContent = "Username,User ID,Time,Alliance,Date,Minister,Minister Type\n";
 
       // Add data rows
       data.forEach(item => {
         const row = [
-          item.userId,
           item.username,
+          item.userId,
           item.time,
           item.alliance,
           item.date,

@@ -18,6 +18,12 @@ docker compose up -d
 * Frontend: http://localhost:8000/svs
 * Backend API: http://localhost:8000/api
 
+### Current features
+
+* Adding a new reservations at http://localhost:8000/svs
+* See the list of reservations at http://localhost:8000/svs/reservations
+
+
 ## Production
 
 Start the stack
