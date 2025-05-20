@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SVS Minister Planning</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.prod.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
+  <script src="/static/js/svs/translations/en.js"></script>
+  <script src="/static/js/svs/translations/ar.js"></script>
+  <script src="/static/js/svs/translations/zh.js"></script>
+  <script src="/static/js/svs/translations/hi.js"></script>
+  <script src="/static/js/svs/translations/es.js"></script>
+  <script src="/static/js/svs/translations/de.js"></script>
+  <script src="/static/js/svs/translations/it.js"></script>
+  <script src="/static/js/svs/translations/pt.js"></script>
+  <script src="/static/js/svs/translations/tr.js"></script>
+  <script src="/static/js/svs/translations/fr.js"></script>
+  <script src="/static/js/svs/translations/ko.js"></script>
+  <script src="/static/js/svs/translations/ja.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #151515;
+    }
+    .bg-container {
+      background-color: #222222;
+    }
+    .bg-accent {
+      background-color: #FF5A5F;
+    }
+    .hover-accent:hover {
+      background-color: #ff4145;
+    }
+    .step-indicator {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .step-active {
+      background-color: #FF5A5F;
+    }
+    .step-completed {
+      background-color: #48BB78;
+    }
+    .step-inactive {
+      background-color: #383838;
+    }
+    .bg-gray-600, .bg-gray-700, .bg-gray-800 {
+      background-color: #383838 !important;
+    }
+    .hover\:bg-gray-600:hover {
+      background-color: #383838 !important;
+    }
+    .disabled-slot {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background-color: #4a4a4a !important;
+    }
+    .disabled-slot:hover {
+      background-color: #4a4a4a !important;
+    }
+    .info-box {
+      background-color: #2d3748;
+      border-left: 4px solid #4299e1;
+      padding: 8px 12px;
+      margin: 12px 0;
+      font-size: 0.9rem;
+    }
+    /* Tooltip styles */
+    .tooltip {
+      position: absolute;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 5px;
+      border-radius: 5px;
+      font-size: 12px;
+      display: none;
+    }
+    .tooltip-visible {
+      display: block;
+    }
+    /* Overlay styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 50;
+    }
+    .modal-content {
+      background-color: #222222;
+      padding: 20px;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    /* Animation for error icon */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+      20%, 40%, 60%, 80% { transform: translateX(5px); }
+    }
+    .error-icon {
+      animation: shake 0.8s;
+      color: #FF5A5F;
+    }
+    /* Spinner animation */
+    .spinner {
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* RTL support for Arabic */
+    [dir="rtl"] .ml-3 {
+      margin-left: 0;
+      margin-right: 0.75rem;
+    }
+
+    [dir="rtl"] .mr-3 {
+      margin-right: 0;
+      margin-left: 0.75rem;
+    }
+
+    [dir="rtl"] .ml-1 {
+      margin-left: 0;
+      margin-right: 0.25rem;
+    }
+
+    [dir="rtl"] .mr-2 {
+      margin-right: 0;
+      margin-left: 0.5rem;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center py-10 text-white font-sans">
+  <div id="app" class="bg-container rounded-lg shadow-lg p-6 w-full max-w-3xl mx-4">
+    <!-- Header with language dropdown -->
+    <div class="flex justify-between items-center mb-4">
+      <h1 class="text-2xl font-bold">{{ translate('title') }}</h1>
+
+      <div class="relative">
+        <select
+          v-model="selectedLanguage"
+          @change="changeLanguage"
+          class="bg-gray-700 border border-gray-600 rounded pr-8 pl-3 py-1 focus:outline-none focus:ring-2 focus:ring-accent appearance-none text-sm"
+        >
+          <option value="en">English</option>
+          <option value="fr">Français (French)</option>
+          <option value="ar">العربية (Arabic)</option>
+          <option value="zh">中文 (Chinese)</option>
+          <option value="ko">한국어 (Korean)</option>
+          <option value="ja">日本語 (Japanese)</option>
+          <option value="hi">हिन्दी (Hindi)</option>
+          <option value="es">Español (Spanish)</option>
+          <option value="de">Deutsch (German)</option>
+          <option value="it">Italiano (Italian)</option>
+          <option value="pt">Português (Portuguese)</option>
+          <option value="tr">Türkçe (Turkish)</option>
+        </select>
+
+        <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+          <svg class="h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step indicators -->
+    <div class="flex items-center justify-between mb-8 px-4">
+      <div class="flex flex-col items-center">
+        <div :class="['step-indicator', currentStep >= 1 ? (currentStep > 1 ? 'step-completed' : 'step-active') : 'step-inactive']">
+          <span v-if="currentStep > 1">✓</span>
+          <span v-else>1</span>
+        </div>
+        <span class="text-xs mt-1">{{ translate('userInfo') }}</span>
+      </div>
+      <div class="h-px bg-gray-600 flex-grow mx-2"></div>
+      <div class="flex flex-col items-center">
+        <div :class="['step-indicator', currentStep >= 2 ? (currentStep > 2 ? 'step-completed' : 'step-active') : 'step-inactive']">
+          <span v-if="currentStep > 2">✓</span>
+          <span v-else>2</span>
+        </div>
+        <span class="text-xs mt-1">{{ translate('selectDate') }}</span>
+      </div>
+      <div class="h-px bg-gray-600 flex-grow mx-2"></div>
+      <div class="flex flex-col items-center">
+        <div :class="['step-indicator', currentStep >= 3 ? (currentStep > 3 ? 'step-completed' : 'step-active') : 'step-inactive']">
+          <span v-if="currentStep > 3">✓</span>
+          <span v-else>3</span>
+        </div>
+        <span class="text-xs mt-1">{{ translate('selectTime') }}</span>
+      </div>
+      <div class="h-px bg-gray-600 flex-grow mx-2"></div>
+      <div class="flex flex-col items-center">
+        <div :class="['step-indicator', currentStep === 4 ? (reservationComplete ? 'step-completed' : 'step-active') : 'step-inactive']">
+          <span v-if="reservationComplete">✓</span>
+          <span v-else>4</span>
+        </div>
+        <span class="text-xs mt-1">{{ translate('reviewReservation') }}</span>
+      </div>
+    </div>
+
+    <!-- Step 1: User Info -->
+    <div v-if="currentStep === 1">
+      <div class="mb-6">
+        <label class="block text-lg font-medium mb-3">{{ translate('userInfo') }}</label>
+
+        <!-- Warning notification when no days are available -->
+        <div v-if="hasNoAvailableDays && !availableDaysLoading" class="bg-yellow-500 bg-opacity-20 border border-yellow-500 rounded-md p-4 mb-4">
+          <div class="flex flex-col items-center">
+            <div class="flex items-start w-full">
+              <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                </svg>
+              </div>
+              <div class="ml-3">
+                <h3 class="text-sm font-medium text-yellow-300">{{ translate('noAvailableDays') }}</h3>
+                <div class="mt-2 text-sm text-gray-300">
+                  <p>{{ translate('noAvailableDaysDesc') }}</p>
+                </div>
+              </div>
+            </div>
+            <div class="mt-4">
+              <button @click="fetchAvailableDays" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-md text-sm font-medium transition duration-200">
+                {{ translate('refreshSlots') }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loading indicator for available days in Step 1 -->
+        <div v-if="availableDaysLoading" class="bg-blue-500 bg-opacity-10 border border-blue-500 rounded-md p-4 mb-4">
+          <div class="flex items-center">
+            <svg class="animate-spin h-5 w-5 text-blue-400 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span class="text-blue-300">{{ translate('loadingDates') }}</span>
+          </div>
+        </div>
+
+        <!-- User ID field -->
+        <label class="block text-sm mb-1">{{ translate('userId') }}</label>
+        <div class="relative mb-1">
+          <input
+            v-model="userId"
+            type="text"
+            :placeholder="translate('userIdPlaceholder')"
+            @input="debouncedHandleUserIdInput"
+            class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-accent"
+            :class="{'border-red-500': userIdError || userIdTooShort, 'opacity-75': userLookupLoading}"
+            :disabled="userLookupLoading"
+            inputmode="numeric"
+            pattern="[0-9]*"
+          >
+          <button @click="clearUserId" class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-200">✕</button>
+        </div>
+        <div v-if="userIdError" class="text-red-400 text-sm mb-1">
+          {{ translate('userIdPlaceholder') }}
+        </div>
+        <div v-if="userIdTooShort && !userIdError && userId" class="text-yellow-400 text-sm mb-1">
+          {{ translate('userIdPlaceholder') }}
+        </div>
+        <div v-if="userLookupLoading" class="text-blue-300 text-sm mb-1">
+          {{ translate('loading') }}
+        </div>
+
+        <div class="info-box mb-3">
+          <span class="text-blue-300">ℹ️ {{ translate('userIdNote') }}</span>
+        </div>
+
+        <!-- Username field -->
+        <label class="block text-sm mb-1">{{ translate('username') }}</label>
+        <input v-model="username" type="text" :placeholder="translate('usernamePlaceholder')" @input="debouncedHandleUsernameInput" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 mb-3 focus:outline-none focus:ring-2 focus:ring-accent">
+
+        <div class="info-box mb-3">
+          <span class="text-blue-300">ℹ️ {{ translate('usernameTip') }}</span>
+        </div>
+
+        <label class="block text-sm mb-1">{{ translate('alliance') }}</label>
+        <div v-if="alliancesLoading" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2">
+          {{ translate('loading') }}
+        </div>
+        <div v-else-if="alliancesError" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-red-400">
+          {{ translate('alliancesError') }}
+        </div>
+        <select v-else v-model="selectedAllianceId" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent">
+          <option value="" disabled>{{ translate('selectAlliance') }}</option>
+          <option v-for="alliance in alliances" :key="alliance.id" :value="alliance.id">
+            {{ alliance.tag }}
+          </option>
+        </select>
+
+        <div class="mt-3">
+          <label class="flex items-center">
+            <input type="checkbox" v-model="saveUserInfo" class="mr-2">
+            <span class="text-sm">{{ translate('saveInfo') }}</span>
+          </label>
+          <p class="text-xs text-gray-400 mt-1 ml-5">{{ translate('saveInfoDesc') }}</p>
+        </div>
+      </div>
+
+      <!-- Next button with conditions -->
+      <div class="flex justify-end mt-8">
+        <button
+          @click="checkUserReservationsAndProceed"
+          :disabled="!username || !userId || !selectedAllianceId || userIdError || userIdTooShort || isLoading || hasNoAvailableDays"
+          class="bg-accent hover-accent px-6 py-2 rounded font-medium transition duration-200"
+          :class="{'opacity-50 cursor-not-allowed': !username || !userId || !selectedAllianceId || userIdError || userIdTooShort || isLoading || hasNoAvailableDays}"
+        >
+          <span v-if="isLoading">
+            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            {{ translate('loading') }}
+          </span>
+          <span v-else-if="hasNoAvailableDays">{{ translate('noAvailable') }}</span>
+          <span v-else>{{ translate('nextDate') }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 2: Select Date -->
+    <div v-else-if="currentStep === 2">
+      <div class="mb-6 flex flex-col items-center">
+        <label class="block text-lg font-medium mb-3">{{ translate('selectDate') }}</label>
+
+        <!-- Warning notification when no dates are available -->
+        <div v-if="availableDays.length === 0 && !availableDaysLoading && !availableDaysError" class="bg-yellow-500 bg-opacity-20 border border-yellow-500 rounded-md p-4 mb-4 w-full">
+          <div class="flex flex-col items-center">
+            <div class="flex items-start w-full">
+              <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                </svg>
+              </div>
+              <div class="ml-3">
+                <h3 class="text-sm font-medium text-yellow-300">{{ translate('noAvailableDays') }}</h3>
+                <div class="mt-2 text-sm text-gray-300">
+                  <p>{{ translate('noAvailableDaysDesc') }}</p>
+                </div>
+              </div>
+            </div>
+            <div class="flex mt-4 space-x-3">
+              <button @click="fetchAvailableDays" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-md text-sm font-medium transition duration-200">
+                {{ translate('refreshSlots') }}
+              </button>
+              <button @click="prevStep" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-md text-sm font-medium transition duration-200">
+                {{ translate('back') }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loading indicator -->
+        <div v-if="availableDaysLoading" class="flex items-center justify-center p-6 w-full">
+          <svg class="animate-spin h-8 w-8 text-accent" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span class="ml-3 text-lg">{{ translate('loadingDates') }}</span>
+        </div>
+
+        <!-- Error message -->
+        <div v-else-if="availableDaysError" class="bg-red-500 bg-opacity-20 border border-red-500 rounded-md p-4 w-full max-w-lg">
+          <div class="flex flex-col items-center">
+            <div class="text-center">
+              <p class="text-red-500 font-medium mb-2">{{ translate('errorLoadingDates') }}</p>
+              <p class="text-gray-300">{{ availableDaysError }}</p>
+            </div>
+            <button @click="fetchAvailableDays" class="mt-3 bg-accent hover-accent px-4 py-2 rounded text-sm font-medium transition duration-200">
+              {{ translate('tryAgain') }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Date selection UI -->
+        <div v-else-if="availableDays.length > 0" class="flex flex-wrap gap-2 justify-center">
+          <button v-for="(day, index) in availableDays" :key="index"
+                  @click="isDateBlocked(day) ? null : selectDate(day)"
+                  :class="['px-4 py-2 rounded transition duration-200',
+                          selectedDay && selectedDay.date === day.date ? 'bg-accent' :
+                          isDateBlocked(day) ? 'disabled-slot' : 'bg-gray-700 hover:bg-gray-600']">
+            {{ formatDate(day.date) }}
+            <span v-if="isDateBlocked(day)" class="ml-1 text-yellow-300">⚠️</span>
+          </button>
+        </div>
+
+        <div v-if="hasBlockedDates" class="mt-4 text-yellow-300 text-sm">
+          <span>⚠️ {{ translate('blockedTimeWarning') }}</span>
+        </div>
+      </div>
+
+      <div class="flex justify-between mt-8">
+        <button @click="prevStep" class="bg-gray-700 hover:bg-gray-600 px-6 py-2 rounded font-medium transition duration-200">{{ translate('back') }}</button>
+        <button @click="nextStep" :disabled="!selectedDay" class="bg-accent hover-accent px-6 py-2 rounded font-medium transition duration-200" :class="{'opacity-50 cursor-not-allowed': !selectedDay}">
+          {{ translate('nextTime') }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 3: Select Time -->
+    <div v-else-if="currentStep === 3">
+      <div class="mb-4">
+        <div class="bg-gray-800 p-3 rounded mb-6">
+          <p class="font-medium">{{ translate('yourSelection') }}</p>
+          <p>{{ formatDate(selectedDay.date) }} - {{ selectedDay.type }} - {{ selectedDay.minister }}</p>
+        </div>
+        <label class="block text-lg font-medium mb-3">{{ translate('selectTime') }}</label>
+        <div class="grid grid-cols-6 gap-1">
+          <button v-for="time in availableTimes" :key="time"
+                  @click="isTimeBlocked(time) ? null : selectTime(time)"
+                  :class="['py-2 rounded transition duration-200',
+                          selectedTime === time ? 'bg-accent' :
+                          isTimeBlocked(time) ? 'disabled-slot' : 'bg-gray-700 hover:bg-gray-600']">
+            {{ time }}
+            <span v-if="isUserSpecificTimeBlocked(time)" class="ml-1 text-yellow-300">⚠️</span>
+          </button>
+        </div>
+        <div v-if="hasBlockedTimes" class="mt-4 text-yellow-300 text-sm">
+          <span>⚠️ {{ translate('blockedTimeWarning') }}</span>
+        </div>
+      </div>
+      <div class="flex justify-between mt-8">
+        <button @click="prevStep" class="bg-gray-700 hover:bg-gray-600 px-6 py-2 rounded font-medium transition duration-200">{{ translate('back') }}</button>
+        <button @click="nextStep" :disabled="!selectedTime" class="bg-accent hover-accent px-6 py-2 rounded font-medium transition duration-200" :class="{'opacity-50 cursor-not-allowed': !selectedTime}">
+          {{ translate('reviewReservation') }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 4: Confirmation/Success -->
+    <div v-else-if="currentStep === 4">
+      <!-- Confirmation view -->
+      <div v-if="!reservationComplete" class="mb-6">
+        <h2 class="text-xl font-bold mb-4">{{ translate('reviewTitle') }}</h2>
+        <div class="bg-gray-800 p-5 rounded">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p class="text-gray-400 text-sm mb-1">{{ translate('userId') }}</p>
+              <p class="font-medium">{{ userId }}</p>
+            </div>
+            <div>
+              <p class="text-gray-400 text-sm mb-1">{{ translate('username') }}</p>
+              <p class="font-medium">{{ username }}</p>
+            </div>
+            <div>
+              <p class="text-gray-400 text-sm mb-1">{{ translate('alliance') }}</p>
+              <p class="font-medium">{{ getAllianceName(selectedAllianceId) }}</p>
+            </div>
+            <div>
+              <p class="text-gray-400 text-sm mb-1">{{ translate('selectDate') }}</p>
+              <p class="font-medium">{{ formatDate(selectedDay.date) }}</p>
+            </div>
+            <div>
+              <p class="text-gray-400 text-sm mb-1">{{ translate('ministerType') }}</p>
+              <p class="font-medium">{{ selectedDay.type }}</p>
+            </div>
+            <div>
+              <p class="text-gray-400 text-sm mb-1">{{ translate('ministerPosition') }}</p>
+              <p class="font-medium">{{ selectedDay.minister }}</p>
+            </div>
+            <div>
+              <p class="text-gray-400 text-sm mb-1">{{ translate('time') }}</p>
+              <p class="font-medium">{{ selectedTime }} UTC</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-box mt-4">
+          <span class="text-blue-300">ℹ️ {{ translate('confirmNote') }}</span>
+        </div>
+
+        <div class="flex justify-between mt-8">
+          <button @click="prevStep" class="bg-gray-700 hover:bg-gray-600 px-6 py-2 rounded font-medium transition duration-200">{{ translate('back') }}</button>
+          <button @click="confirmReservation" class="bg-accent hover-accent px-6 py-2 rounded font-medium transition duration-200">
+            {{ translate('confirmReservation') }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Success view -->
+      <div v-else class="flex flex-col items-center justify-center py-8">
+        <div class="text-5xl text-green-500 mb-4">✓</div>
+        <h2 class="text-xl font-bold mb-2">{{ translate('reservationConfirmed') }}</h2>
+        <div class="bg-gray-800 p-4 rounded w-full max-w-md mt-4">
+          <p><span class="font-medium">{{ translate('userId') }}:</span> {{ userId }}</p>
+          <p><span class="font-medium">{{ translate('username') }}:</span> {{ username }}</p>
+          <p><span class="font-medium">{{ translate('alliance') }}:</span> {{ getAllianceName(selectedAllianceId) }}</p>
+          <p><span class="font-medium">{{ translate('selectDate') }}:</span> {{ formatDate(selectedDay.date) }}</p>
+          <p><span class="font-medium">{{ translate('ministerType') }}:</span> {{ selectedDay.type }}</p>
+          <p><span class="font-medium">{{ translate('ministerPosition') }}:</span> {{ selectedDay.minister }}</p>
+          <p><span class="font-medium">{{ translate('time') }}:</span> {{ selectedTime }} UTC</p>
+          <p><span class="font-medium">{{ translate('state') }}:</span> {{ RESERVATION_STATE_ACTIVE }}</p>
+          <p class="mt-4 text-gray-300 text-sm">{{ translate('reservationId') }}: {{ currentReservationId }}</p>
+        </div>
+        <div class="flex space-x-4 mt-6">
+          <button @click="exportToCalendar" class="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded font-medium transition duration-200 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            {{ translate('exportToCalendar') }}
+          </button>
+          <button @click="resetForm" class="bg-accent hover-accent px-6 py-2 rounded font-medium transition duration-200">
+            {{ translate('makeNew') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div v-if="showConfirmationModal" class="modal-overlay">
+      <div class="modal-content">
+        <h3 class="text-lg font-bold mb-4">{{ translate('confirmModalTitle') }}</h3>
+        <p class="mb-4">{{ translate('confirmModalDesc') }}</p>
+        <div class="flex justify-end space-x-4">
+          <button @click="showConfirmationModal = false" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded font-medium transition duration-200">
+            {{ translate('cancel') }}
+          </button>
+          <button @click="finalizeReservation" class="bg-accent hover-accent px-4 py-2 rounded font-medium transition duration-200">
+            {{ translate('yesConfirm') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div v-if="showErrorModal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="flex flex-col items-center mb-4">
+          <div class="text-5xl text-red-500 mb-3 error-icon">⚠️</div>
+          <h3 class="text-xl font-bold">{{ translate('reservationFailed') }}</h3>
+        </div>
+
+        <div class="bg-gray-800 p-4 rounded mb-4">
+          <p class="mb-2">{{ translate('errorDesc') }}</p>
+          <p class="text-red-400 font-medium">{{ errorMessage }}</p>
+        </div>
+
+        <div class="flex justify-end mt-6">
+          <button @click="tryDifferentTime" class="bg-accent hover-accent px-4 py-2 rounded font-medium transition duration-200">
+            {{ translate('tryDifferentTime') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Success notification -->
+    <div v-if="showExportNotification" class="fixed bottom-4 right-4 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center transition-opacity duration-300" :class="fadeExportNotification ? 'opacity-0' : 'opacity-100'">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+      </svg>
+      <span>{{ translate('calendarExportSuccess') }}</span>
+    </div>
+  </div>
+
+  <script src="/static/js/svs/planning.js"></script>
+</body>
+</html>

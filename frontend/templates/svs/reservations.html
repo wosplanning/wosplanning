@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SVS Reservations List</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #151515;
+    }
+    .bg-container {
+      background-color: #222222;
+    }
+    .bg-accent {
+      background-color: #FF5A5F;
+    }
+    .hover-accent:hover {
+      background-color: #ff4145;
+    }
+    .bg-gray-600, .bg-gray-700, .bg-gray-800 {
+      background-color: #383838 !important;
+    }
+    .hover\:bg-gray-600:hover {
+      background-color: #383838 !important;
+    }
+    .info-box {
+      background-color: #2d3748;
+      border-left: 4px solid #4299e1;
+      padding: 8px 12px;
+      margin: 12px 0;
+      font-size: 0.9rem;
+    }
+    .table-header {
+      background-color: #2d3748;
+    }
+    .table-row-even {
+      background-color: #333333;
+    }
+    .table-row-odd {
+      background-color: #383838;
+    }
+    /* Modal styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 50;
+    }
+    .modal-content {
+      background-color: #222222;
+      padding: 20px;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .loading-spinner {
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top: 4px solid #FF5A5F;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center py-10 text-white font-sans">
+  <div id="app" class="bg-container rounded-lg shadow-lg p-6 w-full max-w-5xl mx-4">
+    <header class="flex justify-between items-center mb-6">
+      <div>
+        <h1 class="text-2xl font-bold">SVS Reservations List</h1>
+        <p class="text-gray-400">View minister reservations</p>
+      </div>
+      <div class="flex space-x-2">
+        <button @click="openFilterModal" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded font-medium transition duration-200 flex items-center">
+          <span class="mr-2">Filter</span>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+          </svg>
+        </button>
+        <button @click="exportToCSV" class="bg-green-600 hover:bg-green-500 px-4 py-2 rounded font-medium transition duration-200 flex items-center">
+          <span class="mr-2">Export CSV</span>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+        </button>
+        <button @click="showNewReservationLink" class="bg-accent hover-accent px-4 py-2 rounded font-medium transition duration-200 flex items-center">
+          <span class="mr-2">New Reservation</span>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Filter Tags Section -->
+    <div v-if="activeFiltersExist" class="mb-4 px-4 py-3 bg-gray-800 rounded flex flex-wrap gap-2 items-center">
+      <div class="flex items-center mr-2">
+        <span class="font-medium">Active Filters:</span>
+      </div>
+
+      <div v-if="userIdFilter" class="flex items-center bg-gray-700 px-2 py-1 rounded">
+        <span class="text-xs mr-2">User ID: {{ userIdFilter }}</span>
+        <button @click="clearUserIdFilter" class="text-gray-400 hover:text-white">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div v-if="allianceFilter" class="flex items-center bg-gray-700 px-2 py-1 rounded">
+        <span class="text-xs mr-2">Alliance: {{ allianceFilter }}</span>
+        <button @click="clearAllianceFilter" class="text-gray-400 hover:text-white">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div v-if="dateFilter" class="flex items-center bg-gray-700 px-2 py-1 rounded">
+        <span class="text-xs mr-2">Date: {{ getFormattedDateDisplay(dateFilter) }}</span>
+        <button @click="clearDateFilter" class="text-gray-400 hover:text-white">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <button v-if="activeFiltersExist" @click="clearAllFilters" class="ml-auto text-xs text-accent hover:text-white">
+        Clear All Filters
+      </button>
+    </div>
+
+    <!-- Info Box -->
+    <div class="info-box mb-4">
+      <span class="text-blue-300">ℹ️ Note:</span> This table shows all reservations. Click on "Export CSV" to download the data.
+    </div>
+
+    <!-- Search and pagination controls -->
+    <div class="flex flex-col md:flex-row justify-between mb-4 gap-2">
+      <div class="relative w-full md:w-64">
+        <input
+          type="text"
+          v-model="searchQuery"
+          placeholder="Search by username"
+          class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-accent">
+        <button v-if="searchQuery" @click="searchQuery = ''" class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-200">✕</button>
+      </div>
+      <div class="flex items-center space-x-2">
+        <span class="text-sm text-gray-400">Show:</span>
+        <select v-model="pageSize" class="bg-gray-700 border border-gray-600 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-accent">
+          <option value="5">5</option>
+          <option value="10">10</option>
+          <option value="20">20</option>
+          <option value="50">50</option>
+        </select>
+        <div class="px-2">
+          <span class="text-sm text-gray-400">{{ paginationInfo }}</span>
+        </div>
+        <button
+          @click="prevPage"
+          :disabled="currentPage === 1"
+          :class="[currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-600', 'bg-gray-700 px-2 py-1 rounded transition duration-200']">
+          &lt;
+        </button>
+        <button
+          @click="nextPage"
+          :disabled="currentPage >= totalPages"
+          :class="[currentPage >= totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-600', 'bg-gray-700 px-2 py-1 rounded transition duration-200']">
+          &gt;
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div v-if="loading" class="py-10 text-center">
+      <div class="loading-spinner"></div>
+      <p class="mt-4 text-gray-400">Loading reservations...</p>
+    </div>
+
+    <!-- Error State -->
+    <div v-else-if="error" class="py-10 text-center">
+      <div class="bg-red-900 bg-opacity-50 rounded-lg p-4 max-w-md mx-auto">
+        <p class="text-red-200">{{ error }}</p>
+        <button @click="fetchReservations" class="mt-4 bg-accent hover-accent px-4 py-2 rounded font-medium transition duration-200">
+          Try Again
+        </button>
+      </div>
+    </div>
+
+    <!-- Reservations Table -->
+    <div v-else class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-700">
+        <thead class="table-header">
+          <tr>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider" @click="sortBy('username')">
+              Username
+              <span v-if="sortColumn === 'username'" :class="sortDirection === 'asc' ? 'ml-1' : 'ml-1 transform rotate-180 inline-block'">▲</span>
+            </th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider" @click="sortBy('time')">
+              Time (UTC)
+              <span v-if="sortColumn === 'time'" :class="sortDirection === 'asc' ? 'ml-1' : 'ml-1 transform rotate-180 inline-block'">▲</span>
+            </th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider" @click="sortBy('alliance')">
+              Alliance
+              <span v-if="sortColumn === 'alliance'" :class="sortDirection === 'asc' ? 'ml-1' : 'ml-1 transform rotate-180 inline-block'">▲</span>
+            </th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider" @click="sortBy('date')">
+              Date
+              <span v-if="sortColumn === 'date'" :class="sortDirection === 'asc' ? 'ml-1' : 'ml-1 transform rotate-180 inline-block'">▲</span>
+            </th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider" @click="sortBy('minister')">
+              Minister
+              <span v-if="sortColumn === 'minister'" :class="sortDirection === 'asc' ? 'ml-1' : 'ml-1 transform rotate-180 inline-block'">▲</span>
+            </th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider" @click="sortBy('ministerType')">
+              Minister Type
+              <span v-if="sortColumn === 'ministerType'" :class="sortDirection === 'asc' ? 'ml-1' : 'ml-1 transform rotate-180 inline-block'">▲</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-700">
+          <tr v-if="paginatedReservations.length === 0" class="table-row-odd">
+            <td colspan="6" class="px-4 py-4 text-center text-gray-400">
+              No reservations found. Adjust your search or filters, or make a new reservation.
+            </td>
+          </tr>
+          <tr v-for="(reservation, index) in paginatedReservations"
+              :key="reservation.id"
+              :class="index % 2 === 0 ? 'table-row-even' : 'table-row-odd'"
+              class="hover:bg-gray-700 transition duration-150">
+            <td class="px-4 py-4 whitespace-nowrap">
+              <div class="text-sm">{{ reservation.username }}</div>
+              <div class="text-xs text-gray-400">ID: {{ reservation.userId }}</div>
+            </td>
+            <td class="px-4 py-4 whitespace-nowrap">
+              <div class="text-sm">{{ reservation.time }}</div>
+            </td>
+            <td class="px-4 py-4 whitespace-nowrap">
+              <div class="text-sm">{{ reservation.alliance }}</div>
+            </td>
+            <td class="px-4 py-4 whitespace-nowrap">
+              <div class="text-sm">{{ formatDate(reservation.date) }}</div>
+            </td>
+            <td class="px-4 py-4 whitespace-nowrap">
+              <div class="text-sm">{{ reservation.minister }}</div>
+            </td>
+            <td class="px-4 py-4 whitespace-nowrap">
+              <div class="text-sm">{{ reservation.ministerType }}</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Filter Modal -->
+    <div v-if="showFilterModal" class="modal-overlay">
+      <div class="modal-content" @click.stop>
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-bold">Filter Reservations</h2>
+          <button @click="showFilterModal = false" class="text-gray-400 hover:text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="mb-4">
+          <label class="block text-sm mb-1">Alliance</label>
+          <select v-model="tempFilters.alliance" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent">
+            <option value="">All Alliances</option>
+            <option v-for="alliance in allAlliances" :key="alliance" :value="alliance">
+              {{ alliance }}
+            </option>
+          </select>
+        </div>
+
+        <div class="mb-4">
+          <label class="block text-sm mb-1">User ID</label>
+          <input v-model="tempFilters.userId" type="text" placeholder="Filter by User ID" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent">
+        </div>
+
+        <div class="mb-4">
+          <label class="block text-sm mb-1">Date</label>
+          <select v-model="tempFilters.date" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent">
+            <option value="">All Dates</option>
+            <option v-for="date in uniqueDatesFormatted" :key="date.value" :value="date.value">
+              {{ date.display }}
+            </option>
+          </select>
+        </div>
+
+        <div class="flex justify-end space-x-2">
+          <button @click="clearFilters" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded font-medium transition duration-200">
+            Clear Filters
+          </button>
+          <button @click="applyFilters" class="bg-accent hover-accent px-4 py-2 rounded font-medium transition duration-200">
+            Apply Filters
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.prod.min.js"></script>
+  <script>
+    // Initialize Vue app
+const app = Vue.createApp({
+  data() {
+    return {
+      // Reservation data - now empty, will be populated from API
+      reservations: [],
+
+      // Loading and error states
+      loading: true,
+      error: null,
+
+      // Search and pagination
+      searchQuery: "",
+      currentPage: 1,
+      pageSize: 5,
+
+      // Sorting
+      sortColumn: "date",
+      sortDirection: "asc",
+
+      // Applied Filters
+      userIdFilter: "",
+      allianceFilter: "",
+      dateFilter: "",
+
+      // Temporary filters (used in the modal before applying)
+      tempFilters: {
+        userId: "",
+        alliance: "",
+        date: ""  // Empty string means "All Dates" is selected by default
+      },
+
+      // Formatted dates cache
+      dateDisplayCache: {},
+
+      // Modal controls
+      showFilterModal: false
+    };
+  },
+  computed: {
+    // Get unique alliances from reservations
+    allAlliances() {
+      const alliances = new Set(this.reservations.map(res => res.alliance));
+      return [...alliances].sort();
+    },
+
+    // Get unique dates from reservations with formatted display values
+    uniqueDatesFormatted() {
+      // Get all unique dates
+      const uniqueDates = [...new Set(this.reservations.map(res => res.date))];
+
+      // Sort dates chronologically
+      uniqueDates.sort((a, b) => new Date(a) - new Date(b));
+
+      // Format for display
+      return uniqueDates.map(date => {
+        return {
+          value: date,
+          display: this.getFormattedDateDisplay(date)
+        };
+      });
+    },
+
+    // Check if any filter is active
+    activeFiltersExist() {
+      return this.userIdFilter !== "" || this.allianceFilter !== "" || this.dateFilter !== "";
+    },
+
+    // Filter reservations based on search query and filters
+    filteredReservations() {
+      let result = [...this.reservations];
+
+      // Apply search
+      if (this.searchQuery) {
+        const query = this.searchQuery.toLowerCase();
+        result = result.filter(res =>
+          res.username.toLowerCase().includes(query) ||
+          res.userId.toLowerCase().includes(query)
+        );
+      }
+
+      // Apply alliance filter
+      if (this.allianceFilter) {
+        result = result.filter(res => res.alliance === this.allianceFilter);
+      }
+
+      // Apply date filter
+      if (this.dateFilter) {
+        result = result.filter(res => res.date === this.dateFilter);
+      }
+
+      // Apply user ID filter
+      if (this.userIdFilter) {
+        result = result.filter(res => res.userId === this.userIdFilter);
+      }
+
+      // Apply sorting
+      result.sort((a, b) => {
+        let aValue = a[this.sortColumn];
+        let bValue = b[this.sortColumn];
+
+        // Convert date strings to Date objects for sorting
+        if (this.sortColumn === 'date') {
+          aValue = new Date(aValue);
+          bValue = new Date(bValue);
+        } else {
+          // Case-insensitive string comparison
+          if (typeof aValue === 'string') {
+            aValue = aValue.toLowerCase();
+          }
+          if (typeof bValue === 'string') {
+            bValue = bValue.toLowerCase();
+          }
+        }
+
+        if (aValue < bValue) {
+          return this.sortDirection === 'asc' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return this.sortDirection === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+
+      return result;
+    },
+
+    // Paginate the filtered reservations
+    paginatedReservations() {
+      const start = (this.currentPage - 1) * this.pageSize;
+      const end = start + this.pageSize;
+      return this.filteredReservations.slice(start, end);
+    },
+
+    // Calculate total number of pages
+    totalPages() {
+      return Math.ceil(this.filteredReservations.length / this.pageSize);
+    },
+
+    // Pagination info text
+    paginationInfo() {
+      if (this.filteredReservations.length === 0) {
+        return "0 of 0";
+      }
+      const start = (this.currentPage - 1) * this.pageSize + 1;
+      const end = Math.min(start + this.pageSize - 1, this.filteredReservations.length);
+      return `${start}-${end} of ${this.filteredReservations.length}`;
+    }
+  },
+  created() {
+    // Fetch reservations when component is created
+    this.fetchReservations();
+  },
+  methods: {
+    // Format a date as "Monday, 21" while preserving UTC
+    getFormattedDateDisplay(dateStr) {
+      // Check if we've already formatted this date
+      if (this.dateDisplayCache[dateStr]) {
+        return this.dateDisplayCache[dateStr];
+      }
+
+      // Format the date while preserving UTC
+      try {
+        // Parse the date in UTC format by explicitly appending 'T00:00:00Z'
+        const dateUTC = new Date(`${dateStr}T00:00:00Z`);
+
+        // Get the day of week in UTC
+        const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const weekday = weekdays[dateUTC.getUTCDay()];
+
+        // Get the day of month in UTC
+        const day = dateUTC.getUTCDate();
+
+        const formattedDate = `${weekday}, ${day}`;
+
+        // Cache it for future use
+        this.dateDisplayCache[dateStr] = formattedDate;
+
+        return formattedDate;
+      } catch (e) {
+        console.error('Error formatting date:', e);
+        return dateStr; // Fallback to original string if there's an error
+      }
+    },
+
+    // Fetch reservations from API
+    async fetchReservations() {
+      this.loading = true;
+      this.error = null;
+
+      try {
+        const response = await fetch('/api/reservations');
+
+        if (!response.ok) {
+          throw new Error(`API request failed with status ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        // Transform API data to match expected format
+        this.reservations = data.map(item => ({
+          id: item.id,
+          userId: item.user.id.toString(),
+          username: item.user.username,
+          alliance: item.alliance.tag,
+          date: item.schedule_date,
+          time: item.schedule_time,
+          type: this.determineReservationType(item.schedule_date),
+          minister: item.minister.name,
+          ministerType: item.minister_type.name,
+          status: "Confirmed", // Default status as API doesn't provide this
+          created: this.formatCreatedDate(item.created_at)
+        }));
+
+        this.loading = false;
+      } catch (error) {
+        console.error('Error fetching reservations:', error);
+        this.error = `Failed to load reservations: ${error.message}`;
+        this.loading = false;
+      }
+    },
+
+    // Helper to determine reservation type based on date
+    determineReservationType(dateString) {
+      const date = new Date(dateString);
+      const day = date.getDay();
+      // 0 is Sunday, 6 is Saturday
+      return (day === 0 || day === 6) ? "Weekend" : "Weekday";
+    },
+
+    // Helper to format created_at date
+    formatCreatedDate(isoDateString) {
+      const date = new Date(isoDateString);
+      return date.toISOString().replace('T', ' ').substr(0, 19);
+    },
+
+    // Format date for display in the table in UTC
+    formatDate(dateString) {
+      try {
+        // Parse the date in UTC format
+        const dateUTC = new Date(`${dateString}T00:00:00Z`);
+
+        // Get month names
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+        // Format the date in UTC as "MMM D, YYYY" (e.g., "Apr 22, 2025")
+        const month = months[dateUTC.getUTCMonth()];
+        const day = dateUTC.getUTCDate();
+        const year = dateUTC.getUTCFullYear();
+
+        return `${month} ${day}, ${year}`;
+      } catch (e) {
+        console.error('Error formatting table date:', e);
+        return dateString; // Fallback to original date string
+      }
+    },
+
+    // Sorting methods
+    sortBy(column) {
+      if (this.sortColumn === column) {
+        // Toggle direction if clicking the same column
+        this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+      } else {
+        // Default to ascending when changing columns
+        this.sortColumn = column;
+        this.sortDirection = 'asc';
+      }
+    },
+
+    // Pagination methods
+    nextPage() {
+      if (this.currentPage < this.totalPages) {
+        this.currentPage++;
+      }
+    },
+
+    prevPage() {
+      if (this.currentPage > 1) {
+        this.currentPage--;
+      }
+    },
+
+    // Filter modal methods
+    openFilterModal() {
+      // Initialize temp filters with current values
+      this.tempFilters.userId = this.userIdFilter;
+      this.tempFilters.alliance = this.allianceFilter;
+      this.tempFilters.date = this.dateFilter; // Will default to "All Dates" if empty
+      this.showFilterModal = true;
+    },
+
+    applyFilters() {
+      // Apply the temp filters to the actual filters
+      this.userIdFilter = this.tempFilters.userId;
+      this.allianceFilter = this.tempFilters.alliance;
+      this.dateFilter = this.tempFilters.date;
+
+      this.showFilterModal = false;
+      this.currentPage = 1; // Reset to first page when applying filters
+    },
+
+    clearFilters() {
+      // Clear temp filters - set to empty string to select "All Dates" by default
+      this.tempFilters.userId = "";
+      this.tempFilters.alliance = "";
+      this.tempFilters.date = "";  // This will select the "All Dates" option
+
+      // Also clear actual filters
+      this.userIdFilter = "";
+      this.allianceFilter = "";
+      this.dateFilter = "";
+
+      this.showFilterModal = false;
+      this.currentPage = 1; // Reset to first page
+    },
+
+    clearAllFilters() {
+      this.userIdFilter = "";
+      this.allianceFilter = "";
+      this.dateFilter = "";
+      this.currentPage = 1; // Reset to first page
+    },
+
+    clearUserIdFilter() {
+      this.userIdFilter = "";
+      this.currentPage = 1;
+    },
+
+    clearAllianceFilter() {
+      this.allianceFilter = "";
+      this.currentPage = 1;
+    },
+
+    clearDateFilter() {
+      this.dateFilter = "";
+      this.currentPage = 1;
+    },
+
+    // Export to CSV functionality
+    exportToCSV() {
+      // Get the data to export (using the filtered data, not just the paginated view)
+      const data = this.filteredReservations;
+
+      // Create CSV header row to include User ID
+      let csvContent = "User ID,Username,Time,Alliance,Date,Minister,Minister Type\n";
+
+      // Add data rows
+      data.forEach(item => {
+        const row = [
+          item.userId,
+          item.username,
+          item.time,
+          item.alliance,
+          item.date,
+          item.minister,
+          item.ministerType
+        ];
+
+        // Properly escape fields with quotes if they contain commas
+        const escapedRow = row.map(field => {
+          const stringField = String(field || '');
+          return stringField.includes(',') ? `"${stringField}"` : stringField;
+        });
+
+        csvContent += escapedRow.join(',') + '\n';
+      });
+
+      // Create a Blob and download link
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+
+      // Create download link and trigger download
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'svs_reservations.csv');
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    },
+
+    // Show new reservation dialog
+    showNewReservationLink() {
+      window.location.assign("/svs");
+    }
+  }
+}).mount('#app');
+  </script>
+</body>
+</html>

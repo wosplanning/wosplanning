@@ -1,0 +1,7 @@
+aerich[toml]>=0.7,<1.0
+aiosqlite>=0.21,<0.22
+fastapi>=0.115.0,<0.116
+gunicorn>=23.0,<24.0
+Jinja2>=3.1,<3.2
+tortoise-orm[accel]>=0.25,<0.26
+uvicorn>=0.34,<0.35

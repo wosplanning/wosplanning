@@ -1,0 +1,19 @@
+services:
+  backend:
+    container_name: wosy-backend
+    stdin_open: true
+    tty: true
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./frontend:/frontend
+      - ./database:/storage
+    environment:
+      COMPOSE_BAKE: true
+      ENVIRONMENT: development
+      DATABASE_URL: sqlite:///storage/development.db
