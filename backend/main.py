@@ -46,7 +46,7 @@ async def startup_event():
 
     await Tortoise.generate_schemas()
 
-    tags = ["MAD", "DUF", "PAD", "MVP", "BTA", "SNY", "PaP"]
+    tags = ["MAD", "DUF", "PAD", "MVP", "BTA", "SNY", "CLW"]
     alliances = []
 
     for tag in tags:

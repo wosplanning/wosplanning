@@ -202,17 +202,17 @@ async def api_post_reservations(data: ReservationSchema):
 async def api_get_svs():
     return [
         {
-            "date": "2025-05-19",
+            "date": "2025-06-16",
             "type": "Construction Day",
             "minister": 'Vice President',
         },
         {
-            "date": "2025-05-20",
+            "date": "2025-06-17",
             "type": "Research Day",
             "minister": 'Vice President',
         },
         {
-            "date": "2025-05-22",
+            "date": "2025-06-19",
             "type": "Training Day",
             "minister": 'Minister of Education',
         },
