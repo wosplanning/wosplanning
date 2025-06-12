@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SVS Minister Planning</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.prod.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
+  <script src="/static/lib/vue/vue.global.prod.min.js"></script>
+  <script src="/static/lib/axios/axios.min.js"></script>
   <script src="/static/js/svs/translations/en.js"></script>
   <script src="/static/js/svs/translations/ar.js"></script>
   <script src="/static/js/svs/translations/zh.js"></script>
@@ -18,7 +18,8 @@
   <script src="/static/js/svs/translations/fr.js"></script>
   <script src="/static/js/svs/translations/ko.js"></script>
   <script src="/static/js/svs/translations/ja.js"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+  <script src="/static/js/svs/translations/pl.js"></script>
+  <link href="/static/lib/tailwind/tailwind.min.css" rel="stylesheet">
   <style>
     body {
       background-color: #151515;
@@ -175,6 +176,7 @@
           <option value="it">Italiano (Italian)</option>
           <option value="pt">Português (Portuguese)</option>
           <option value="tr">Türkçe (Turkish)</option>
+          <option value="pl">Polski (Polish)</option>
         </select>
 
         <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
@@ -575,11 +577,15 @@
       <span>{{ translate('calendarExportSuccess') }}</span>
     </div>
 
-    <!-- Footer with GitHub link -->
-    <div class="mt-8 pt-4 border-t border-gray-700 text-center text-gray-400">
-      <p class="text-sm">
+    <!-- Footer with GitHub, Privacy Policy, and Reservations List links -->
+    <div class="mt-8 pt-4 border-t border-gray-700 text-center text-gray-400 text-sm">
+      <p>
         Source code available on
         <a href="https://github.com/wosplanning/wosplanning" target="_blank" class="text-accent hover:text-white underline">GitHub</a>
+        &nbsp;|&nbsp;
+        <a href="/svs/reservations" class="text-accent hover:text-white underline">Reservations List</a>
+        &nbsp;|&nbsp;
+        <a href="/privacy" class="text-accent hover:text-white underline">Privacy Policy</a>
       </p>
     </div>
   </div>

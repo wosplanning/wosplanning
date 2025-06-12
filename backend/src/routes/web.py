@@ -17,6 +17,17 @@ async def favicon():
     return Response(content=b"", media_type="image/x-icon")
 
 
+@web.get("/privacy", response_class=HTMLResponse, include_in_schema=False)
+async def html_svs(request: Request):
+    return templates.TemplateResponse(
+        "privacy.html",
+        {
+            "request": request,
+            "title": "Privacy Policy",
+        }
+    )
+
+
 @web.get("/svs", response_class=HTMLResponse, include_in_schema=False)
 async def html_svs(request: Request):
     return templates.TemplateResponse(

@@ -83,6 +83,7 @@ createApp({
       pt: ptTranslations,
       tr: trTranslations,
       fr: frTranslations,
+      pl: plTranslations,
     };
 
     // In the setup() function, add these reactive refs
