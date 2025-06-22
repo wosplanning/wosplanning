@@ -1,3 +1,5 @@
+import json
+import os
 from typing import Optional
 from fastapi import APIRouter, Query, status
 from fastapi.responses import JSONResponse
@@ -200,20 +202,17 @@ async def api_post_reservations(data: ReservationSchema):
 
 @api.get("/svs")
 async def api_get_svs():
-    return [
-        {
-            "date": "2025-06-16",
-            "type": "Construction Day",
-            "minister": 'Vice President',
-        },
-        {
-            "date": "2025-06-17",
-            "type": "Research Day",
-            "minister": 'Vice President',
-        },
-        {
-            "date": "2025-06-19",
-            "type": "Training Day",
-            "minister": 'Minister of Education',
-        },
-    ]
+    try:
+        json_file_path = os.path.join("database", "svs_dates.json")
+
+        if not os.path.exists(json_file_path):
+            raise HTTPException(status_code=404, detail="SVS dates file not found")
+
+        with open(json_file_path, 'r', encoding='utf-8') as file:
+            svs_data = json.load(file)
+
+        return svs_data
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="Invalid JSON format in SVS dates file")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error reading SVS dates: {str(e)}")
