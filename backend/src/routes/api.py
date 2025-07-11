@@ -1,5 +1,5 @@
 import json
-import os
+from pathlib import Path
 from typing import Optional
 from fastapi import APIRouter, Query, status
 from fastapi.responses import JSONResponse
@@ -203,12 +203,12 @@ async def api_post_reservations(data: ReservationSchema):
 @api.get("/svs")
 async def api_get_svs():
     try:
-        json_file_path = os.path.join("database", "svs_dates.json")
+        json_file_path = Path("/storage/svs_dates.json")
 
-        if not os.path.exists(json_file_path):
+        if not json_file_path.exists():
             raise HTTPException(status_code=404, detail="SVS dates file not found")
 
-        with open(json_file_path, 'r', encoding='utf-8') as file:
+        with json_file_path.open('r', encoding='utf-8') as file:
             svs_data = json.load(file)
 
         return svs_data
