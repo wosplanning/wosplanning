@@ -10,7 +10,8 @@ services:
       - "8000:8000"
     environment:
       ENVIRONMENT: production
-      DATABASE_URL: sqlite:///storage/production.db
+      DATABASE_URL: sqlite:///storage/production.db?journal_mode=WAL&synchronous=NORMAL&cache_size=10000&temp_store=MEMORY
+      SVS_DATES_JSON: /storage/svs_dates.json
     volumes:
       - ./database:/storage
       - ./frontend:/frontend

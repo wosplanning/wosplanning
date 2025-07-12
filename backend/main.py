@@ -1,4 +1,3 @@
-import os
 from datetime import datetime
 from os import getenv
 from fastapi import FastAPI, Request, status

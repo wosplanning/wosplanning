@@ -16,4 +16,5 @@ services:
     environment:
       COMPOSE_BAKE: true
       ENVIRONMENT: development
-      DATABASE_URL: sqlite:///storage/development.db
+      DATABASE_URL: sqlite:///storage/development.db?journal_mode=WAL&synchronous=NORMAL
+      SVS_DATES_JSON: /storage/svs_dates.json
